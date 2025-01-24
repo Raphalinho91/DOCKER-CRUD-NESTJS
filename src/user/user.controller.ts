@@ -7,10 +7,17 @@ import {
   Put,
   Delete,
   Res,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+
+interface RequestWithCookies extends Request {
+  cookies: {
+    token: string;
+  };
+}
 
 @Controller('users')
 export class UserController {
@@ -51,10 +58,18 @@ export class UserController {
 
   @Put(':id')
   update(
+    @Req() request: RequestWithCookies,
     @Param('id') id: number,
     @Body() body: { username: string; password: string },
-  ): Promise<User> {
-    const user = { id, username: body.username, password: body.password };
+  ): Promise<Omit<User, 'password'>> {
+    const cookies = request.cookies;
+    const accessToken = cookies.token;
+    const user = {
+      id,
+      username: body.username,
+      password: body.password,
+      token: accessToken,
+    };
     return this.userService.update(user);
   }
 

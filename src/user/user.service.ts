@@ -18,7 +18,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
   ) {}
 
   private async getUserById(id: number) {
@@ -40,6 +40,7 @@ export class UserService {
     ) {
       throw error;
     }
+    console.log(error);
     throw new InternalServerErrorException('Unexpected error occurred!');
   }
 
@@ -118,9 +119,16 @@ export class UserService {
     }
   }
 
-  async update(UpdateDto: UpdateDto): Promise<User> {
+  async update(UpdateDto: UpdateDto): Promise<Omit<User, 'password'>> {
     try {
-      const { id, username, password } = UpdateDto;
+      const { id, username, password, token } = UpdateDto;
+      const decodedToken: { sub: number; username: string } =
+        this.jwtService.verify(token);
+
+      const userIdFromToken = decodedToken.sub;
+      if (userIdFromToken !== id) {
+        throw new Error('User ID mismatch with token');
+      }
 
       const user = await this.getUserById(id);
       if (username) {
@@ -130,7 +138,9 @@ export class UserService {
         user.password = await argon2.hash(password);
       }
 
-      return await this.userRepository.save(user);
+      const result = await this.userRepository.save(user);
+      const { password: _, ...userWithoutPassword } = result;
+      return userWithoutPassword;
     } catch (error) {
       this.handleError(error);
     }

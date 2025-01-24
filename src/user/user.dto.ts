@@ -53,4 +53,10 @@ export class UpdateDto {
   @MinLength(6)
   @MaxLength(255)
   password: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(255)
+  token: string;
 }
