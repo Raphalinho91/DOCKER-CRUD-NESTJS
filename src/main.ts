@@ -15,7 +15,7 @@ async function bootstrap() {
   );
 
   await app.register(fastifyCookie, {
-    secret: 'secretCookie',
+    secret: process.env.COOKIE_SECRET,
   });
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: true,
